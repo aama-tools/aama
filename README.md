@@ -3,13 +3,12 @@
 Mainframe security analysis workbench.
 
 A'ama exposes Model Context Protocol (MCP) servers that let an AI coding
-agent drive z/OS security assessment work — both static analysis of
+agent drive z/OS security assessment work. Both static analysis of
 engagement artifacts (RACF database unloads, SMF records, JCL, SDSF
 output, USS file listings) and live LPAR interaction (over SSH+tsocmd or
-FTP+JES) — under explicit, tiered scope enforcement.
+FTP+JES) are carefully investigated under explicit, tiered scope enforcement.
 
-Named after the 'a'ama crab (*Grapsus tenuicrustatus*), the
-sideways-scuttling rock crab native to Hawaiian shorelines.
+Named after the 'A'ama which translates from Native Hawaiian meaning “to walk with caution”, these sideways-scuttling rock crabs blend in with their surroundings along the shoreline in both big surf and wild conditions.
 
 > **Status: pre-alpha.** Architecture and engagement schema are defined;
 > implementation has not begun. See [`docs/architecture.md`](docs/architecture.md).

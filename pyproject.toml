@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aama"
+version = "0.0.1"
+description = "Mainframe security analysis workbench (pre-alpha)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [
+    { name = "saltymiche" },
+]
+keywords = ["mainframe", "security", "zos", "racf", "pentest", "mcp"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Information Technology",
+    "Topic :: Security",
+    "Topic :: System :: Systems Administration",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/aama-tools/aama"
+Documentation = "https://github.com/aama-tools/aama/blob/main/docs/architecture.md"
+Repository = "https://github.com/aama-tools/aama"
+Issues = "https://github.com/aama-tools/aama/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aama"]

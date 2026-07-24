@@ -86,14 +86,14 @@ target:                              # live-mcp connection parameters
       host:    192.0.2.10
       ssh_port: 22
       ftp_port: 21
-      ssh_user: TESTUSR
+      ssh_user: US01
       # secrets are NEVER stored in config.yaml; loaded from environment
       # or a secrets file referenced here by path
       ssh_credential_ref: env:LPARPRD1_SSH_KEY
       ftp_credential_ref: env:LPARPRD1_FTP_PASS
       nje_node: NJENODE1               # optional, for cross-node findings
     - name:    DEV
-      host:    192.0.2.20
+      host:    127.0.0.1
       # ...
 
 racf_metadata:                       # tells static-mcp how to parse IRRDBU00
@@ -107,7 +107,7 @@ policy:
     commands_per_minute: 30
     bytes_per_minute: 1_048_576
   scope:
-    allowed_ips:    [192.0.2.10, 192.0.2.20]
+    allowed_ips:    [192.0.2.10, 127.0.0.1]
     allowed_ports:  [22, 21, 4000]
     forbidden_userids: [IBMUSER, ROOT, *SPECIAL]  # never operate as these
   tool_tiers:                        # override default_tier per tool category
@@ -168,11 +168,11 @@ findings into `findings/`, one JSON file per finding, filename
   "cvss_equivalent": 9.1,
   "category": "privilege-escalation",
   "subcategory": "racf-misconfiguration",
-  "summary": "The SURROGAT profile '*.SUBMIT' has UACC=ALTER, permitting any authenticated user to submit jobs under the identity of any other userid. Userid ADMINUSR holds RACF SPECIAL and is active; the engagement test userid TESTUSR can therefore submit JCL executing as ADMINUSR and gain SPECIAL.",
+  "summary": "The SURROGAT profile '*.SUBMIT' has UACC=ALTER, permitting any authenticated user to submit jobs under the identity of any other userid. Userid AD67 holds RACF SPECIAL and is active; the engagement test userid US01 can therefore submit JCL executing as AD67 and gain SPECIAL.",
   "affected_entities": [
     {"type": "racf-profile", "class": "SURROGAT", "name": "*.SUBMIT"},
-    {"type": "userid",       "id": "ADMINUSR", "attributes": ["SPECIAL", "ACTIVE"]},
-    {"type": "userid",       "id": "TESTUSR", "context": "engagement test userid"}
+    {"type": "userid",       "id": "AD67", "attributes": ["SPECIAL", "ACTIVE"]},
+    {"type": "userid",       "id": "US01", "context": "engagement test userid"}
   ],
   "evidence": [
     {
@@ -182,13 +182,13 @@ findings into `findings/`, one JSON file per finding, filename
     {
       "kind": "audit-log-entry",
       "ref": "audit.log#2026-02-12T14:31:08Z",
-      "description": "Job submission as ADMINUSR succeeded, RC=0"
+      "description": "Job submission as AD67 succeeded, RC=0"
     }
   ],
   "replication_steps": [
-    "Connect as TESTUSR via SSH+tsocmd.",
+    "Connect as US01 via SSH+tsocmd.",
     "Confirm SURROGAT *.SUBMIT UACC=ALTER: `tsocmd \"RLIST SURROGAT *.SUBMIT\"`",
-    "Submit JCL with USER=ADMINUSR; observe RC=0 and SPECIAL inherited."
+    "Submit JCL with USER=AD67; observe RC=0 and SPECIAL inherited."
   ],
   "remediation": "Reduce UACC on SURROGAT '*.SUBMIT' to NONE. Define explicit SURROGAT profiles per authorized submit relationship (e.g., SCHEDID.SUBMIT permitted to specific scheduler userids only). Audit existing job submission patterns before tightening.",
   "references": [
@@ -377,8 +377,8 @@ JSON (`.jsonl`), one record per line. Each record includes a hash of the
 previous record's serialized form, forming a tamper-evident chain.
 
 ```json
-{"schema_version":1,"seq":1,"ts":"2026-02-12T14:30:55.121Z","actor":"agent","operator":"salty@example.com","engagement":"acme-q1-2026","lpar":"LPARPRD1","tool":"racf_listuser","args":{"userid":"ADMINUSR"},"tier":1,"policy_decision":"allow","execution_status":"ok","duration_ms":312,"response_summary":"USER=ADMINUSR SPECIAL ACTIVE GROUP=SYS1","response_bytes":4096,"prev_hash":"0000000000000000000000000000000000000000000000000000000000000000","hash":"a3f1c9..."}
-{"schema_version":1,"seq":2,"ts":"2026-02-12T14:31:08.502Z","actor":"agent","operator":"salty@example.com","engagement":"acme-q1-2026","lpar":"LPARPRD1","tool":"submit_jcl","args":{"jcl_ref":"artifacts/jcl/surrogat-test.jcl","jobcard_user":"ADMINUSR"},"tier":3,"policy_decision":"approved","approver":"salty@example.com","approval_ts":"2026-02-12T14:31:02.119Z","execution_status":"ok","duration_ms":1841,"response_summary":"JOB12345 submitted, RC=0","response_bytes":2048,"prev_hash":"a3f1c9...","hash":"b7d402..."}
+{"schema_version":1,"seq":1,"ts":"2026-02-12T14:30:55.121Z","actor":"agent","operator":"salty@example.com","engagement":"acme-q1-2026","lpar":"LPARPRD1","tool":"racf_listuser","args":{"userid":"AD67"},"tier":1,"policy_decision":"allow","execution_status":"ok","duration_ms":312,"response_summary":"USER=AD67 SPECIAL ACTIVE GROUP=SYS1","response_bytes":4096,"prev_hash":"0000000000000000000000000000000000000000000000000000000000000000","hash":"a3f1c9..."}
+{"schema_version":1,"seq":2,"ts":"2026-02-12T14:31:08.502Z","actor":"agent","operator":"salty@example.com","engagement":"acme-q1-2026","lpar":"LPARPRD1","tool":"submit_jcl","args":{"jcl_ref":"artifacts/jcl/surrogat-test.jcl","jobcard_user":"AD67"},"tier":3,"policy_decision":"approved","approver":"salty@example.com","approval_ts":"2026-02-12T14:31:02.119Z","execution_status":"ok","duration_ms":1841,"response_summary":"JOB12345 submitted, RC=0","response_bytes":2048,"prev_hash":"a3f1c9...","hash":"b7d402..."}
 ```
 
 Field meanings:
@@ -442,7 +442,7 @@ Escalation flow (tier 3 write or any tier-3-categorized tool):
 1. Agent invokes the tool with arguments.
 2. Policy middleware records `escalate-pending` in the audit log and
    issues an MCP `elicitation/create` to the client with a summary:
-   "Agent wants to submit JCL as user ADMINUSR. Proceed? [yes/no/reason]"
+   "Agent wants to submit JCL as user AD67. Proceed? [yes/no/reason]"
 3. Human responds via the client UI.
 4. Approval (or denial) is recorded in the audit log with the approver's
    identity and a free-text rationale.
